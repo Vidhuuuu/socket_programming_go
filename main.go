@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"log"
 	"net"
 )
@@ -22,11 +24,22 @@ func main() {
 			log.Printf("Failed to accept connection: %v\n", err)
 			continue
 		}
-		handleConnection(conn)
+		go handleConnection(conn)
 	}
 }
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 	log.Printf("New connection from %s\n", conn.RemoteAddr())
+
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		text := scanner.Text()
+		log.Printf("Received: %s\n", text)
+		fmt.Fprintf(conn, "You said: %s\n", text)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("Scanner error: %v\n", err)
+	}
 }
