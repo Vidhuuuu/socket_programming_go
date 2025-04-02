@@ -24,12 +24,17 @@ func main() {
 			log.Printf("Failed to accept connection: %v\n", err)
 			continue
 		}
-		go handleConnection(conn)
+		go func (c net.Conn) {
+			defer func() {
+				log.Printf("Done with %v\n", conn.RemoteAddr())
+				c.Close()
+			}()
+			handleConnection(conn)
+		}(conn)
 	}
 }
 
 func handleConnection(conn net.Conn) {
-	defer conn.Close()
 	log.Printf("New connection from %s\n", conn.RemoteAddr())
 
 	scanner := bufio.NewScanner(conn)
