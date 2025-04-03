@@ -1,4 +1,4 @@
-package tcp_server
+package tcp
 
 import (
 	"bufio"
@@ -7,7 +7,7 @@ import (
 	"net"
 )
 
-func TCPStartServer(addr string) {
+func StartServer(addr string) {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatalf("Failed to listen: %v\n", err)
