@@ -43,7 +43,7 @@ func StartServer(addr string) {
 			activeConns[conn] = struct{}{}
 			activeConnsMu.Unlock()
 
-			go func (c net.Conn) {
+			go func(c net.Conn) {
 				defer func() {
 					log.Println("Done with", conn.RemoteAddr())
 					activeConnsMu.Lock()
@@ -64,7 +64,7 @@ func StartServer(addr string) {
 		conn.Close()
 	}
 	numClosed := len(activeConns)
-	activeConns   = make(map[net.Conn]struct{})
+	activeConns = make(map[net.Conn]struct{})
 	activeConnsMu.Unlock()
 
 	listener.Close()
@@ -72,7 +72,7 @@ func StartServer(addr string) {
 }
 
 func handleConnection(conn net.Conn) {
-	log.Println("New connection from" , conn.RemoteAddr())
+	log.Println("New connection from", conn.RemoteAddr())
 
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
@@ -81,8 +81,11 @@ func handleConnection(conn net.Conn) {
 		fmt.Fprintln(conn, cmsg)
 	}
 
-	if err := scanner.Err(); err != nil {
-		log.Printf("Scanner error: %v\n", err)
+	err := scanner.Err()
+	if err != nil {
+		if errors.Is(err, net.ErrClosed) {
+			log.Println("Scanner error:", err)
+		}
 		return
 	}
 }

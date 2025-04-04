@@ -43,10 +43,10 @@ func StartClient(addr string) {
 		for {
 			s, err := stdinReader.ReadString('\n')
 			if err != nil {
-			    close(inputChan)
+				close(inputChan)
 				return
 			}
-			inputChan<-s
+			inputChan <- s
 		}
 	}()
 
