@@ -8,10 +8,14 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 )
 
-var activeConns int
+var (
+	activeConns   = make(map[net.Conn]struct{})
+	activeConnsMu sync.Mutex
+)
 
 func StartServer(addr string) {
 	listener, err := net.Listen("tcp", addr)
@@ -29,18 +33,22 @@ func StartServer(addr string) {
 			conn, err := listener.Accept()
 			if err != nil {
 				if errors.Is(err, net.ErrClosed) {
-					log.Println("Shutting down server...")
-					log.Println("Active connections on shutdown:", activeConns)
 					return
 				}
 				log.Println("Failed to accept connection:", err)
 				continue
 			}
-			activeConns += 1
+
+			activeConnsMu.Lock()
+			activeConns[conn] = struct{}{}
+			activeConnsMu.Unlock()
+
 			go func (c net.Conn) {
 				defer func() {
 					log.Println("Done with", conn.RemoteAddr())
-					activeConns -= 1
+					activeConnsMu.Lock()
+					delete(activeConns, c)
+					activeConnsMu.Unlock()
 					c.Close()
 				}()
 				handleConnection(conn)
@@ -49,7 +57,18 @@ func StartServer(addr string) {
 	}()
 
 	<-stop
+	log.Println("Shutting down server...")
+
+	activeConnsMu.Lock()
+	for conn := range activeConns {
+		conn.Close()
+	}
+	numClosed := len(activeConns)
+	activeConns   = make(map[net.Conn]struct{})
+	activeConnsMu.Unlock()
+
 	listener.Close()
+	log.Println("Active connections on shutdown:", numClosed)
 }
 
 func handleConnection(conn net.Conn) {
@@ -64,5 +83,6 @@ func handleConnection(conn net.Conn) {
 
 	if err := scanner.Err(); err != nil {
 		log.Printf("Scanner error: %v\n", err)
+		return
 	}
 }
