@@ -10,7 +10,7 @@ import (
 func StartServer(addr string) {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("Failed to listen: %v\n", err)
+		log.Fatalln("Failed to listen:", err)
 	}
 	defer listener.Close()
 
@@ -19,12 +19,12 @@ func StartServer(addr string) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Printf("Failed to accept connection: %v\n", err)
+			log.Println("Failed to accept connection:", err)
 			continue
 		}
 		go func (c net.Conn) {
 			defer func() {
-				log.Printf("Done with %v\n", conn.RemoteAddr())
+				log.Println("Done with", conn.RemoteAddr())
 				c.Close()
 			}()
 			handleConnection(conn)
@@ -33,13 +33,13 @@ func StartServer(addr string) {
 }
 
 func handleConnection(conn net.Conn) {
-	log.Printf("New connection from %s\n", conn.RemoteAddr())
+	log.Println("New connection from" , conn.RemoteAddr())
 
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
-		text := scanner.Text()
-		log.Printf("Received: %s\n", text)
-		fmt.Fprintf(conn, "You said: %s\n", text)
+		cmsg := scanner.Text()
+		fmt.Printf("from [%s]: %s\n", conn.RemoteAddr(), cmsg)
+		fmt.Fprintln(conn, cmsg)
 	}
 
 	if err := scanner.Err(); err != nil {

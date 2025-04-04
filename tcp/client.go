@@ -14,20 +14,21 @@ func StartClient(addr string) {
 		log.Fatalf("Failed to connect to %v: %v\n", addr, err)
 	}
 	defer conn.Close()
+	log.Printf("Connected to server(%v)...\n", addr)
 
-	fmt.Printf("Connected to server(%v). Type messages here\n", addr)
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		msg := scanner.Text()
-		if msg == "bye" {
+		smsg := scanner.Text()
+		if smsg == "bye" {
 			fmt.Println("Disconnecting...")
 			break
 		}
-		fmt.Fprintln(conn, msg)
+		fmt.Fprintln(conn, smsg)
+
 		response, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
 			log.Println("Failed to capture response from server")
 		}
-		fmt.Printf("Server: %v", response)
+		fmt.Print("Echo: ", response)
 	}
 }
