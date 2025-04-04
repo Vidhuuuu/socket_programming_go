@@ -45,13 +45,13 @@ func StartServer(addr string) {
 
 			go func(c net.Conn) {
 				defer func() {
-					log.Println("Done with", conn.RemoteAddr())
+					log.Println("Done with", c.RemoteAddr())
 					activeConnsMu.Lock()
 					delete(activeConns, c)
 					activeConnsMu.Unlock()
 					c.Close()
 				}()
-				handleConnection(conn)
+				handleConnection(c)
 			}(conn)
 		}
 	}()
@@ -83,7 +83,7 @@ func handleConnection(conn net.Conn) {
 
 	err := scanner.Err()
 	if err != nil {
-		if errors.Is(err, net.ErrClosed) {
+		if !errors.Is(err, net.ErrClosed) {
 			log.Println("Scanner error:", err)
 		}
 		return

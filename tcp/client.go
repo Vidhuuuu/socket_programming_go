@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
@@ -60,7 +61,7 @@ func StartClient(addr string) {
 			if !ok {
 				return
 			}
-			msg = msg[:len(msg)-1]
+			msg = strings.TrimRight(msg, "\r\n")
 			if _, err := fmt.Fprintln(conn, msg); err != nil {
 				log.Println("Failed to send to server:", err)
 				break
