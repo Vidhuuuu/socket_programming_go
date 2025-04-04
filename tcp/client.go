@@ -2,12 +2,12 @@ package tcp
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func StartClient(addr string) {
@@ -20,17 +20,15 @@ func StartClient(addr string) {
 
 	done := make(chan struct{})
 	inputChan := make(chan string)
+	stop := make(chan os.Signal, 1)
+
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		reader := bufio.NewReader(conn)
 		for {
 			response, err := reader.ReadString('\n')
 			if err != nil {
-				if errors.Is(err, io.EOF) {
-					log.Println("Server closed the connection.")
-				} else {
-					log.Println("Failed to read:", err)
-				}
 				close(done)
 				return
 			}
@@ -53,6 +51,10 @@ func StartClient(addr string) {
 	for {
 		select {
 		case <-done:
+			log.Println("Server disconnected.")
+			return
+		case <-stop:
+			log.Println("Interrupt received. Closing connection and exiting.")
 			return
 		case msg, ok := <-inputChan:
 			if !ok {
